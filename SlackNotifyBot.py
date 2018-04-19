@@ -6,36 +6,78 @@
 
 import sys
 import os
+import time
 from slackclient import SlackClient
 
-  
 
 class Monitor():
     def loadDefaultSettings(self):
         self.watchDirectory = "."
-        self.checkInterval = 5
+        self.checkInterval = 5 
+        self.maxAlertFrequency = 10 #greater or equal to check interval
 
     def loadSettings(self):
-        print("loadingSettings")
+        self.log.write("loadingSettings\n")
         try:
             #open file
             settingsFileObject = open("settings.cfg", "r")
-            print(settingsFileObject)
+            
         except OSError:
             #file not found, load defaults
-            print("Could not open settings")
+            self.log.write("Could not open settings\n")
         
         #load defaults for now, will add file parsing later
         self.loadDefaultSettings()
-        print(self.watchDirectory)
-        print(self.checkInterval)
+        self.errorTolerance = self.maxAlertFrequency / self.checkInterval
+        if(self.errorTolerance <= 1):
+            self.log.write("error tolorance too low: {}\n".format(self.errorTolerance))
+            self.errorTolerance = 1
 
-    print("I'm watching")
+    #if this is the first check that returned a failure, send alert 
+    #if we have just sent an alert, wait until we exceed the error tolorance to generate another alert to avoid spam
+    def processError(self):
+        self.alertCount += 1
+        if(self.alertCount >= self.errorTolerance): 
+            self.log.write("Alert count: {}, errorTolerance: {}\n".format(self.alertCount, self.errorTolerance))           
+            self.alertCount = 0
+            self.processError()
+        elif(self.alertCount == 1):
+            self.sendAlert()
 
-class Alerter:
-    print("This is an alert")
+    def sendAlert(self):
+        self.log.write("ALERT! There are no new files!\n")
+
+
+    def updateFileCount(self):
+        newFileCount = sum(1 for f in os.listdir(self.watchDirectory) if os.path.isfile(os.path.join(self.watchDirectory, f)) and f[0] != '.')
+        self.log.write("current file count: {} \n".format(newFileCount))
+
+        if(self.fileCount < newFileCount):
+            self.fileCount = newFileCount
+        else:
+            self.processError()
+
+    def run(self):
+        self.loadSettings()
+        x=0
+        try:
+            while x < 20:
+                self.log.write("looping\n")
+                time.sleep(self.checkInterval)
+                self.updateFileCount()
+                x += 1
+        except BaseException as e:
+            print("watcher has exited!, {}".format(e))
+            self.log.write("watcher has exited!, {}".format(e))
+    
+    def __init__(self):
+        self.loadDefaultSettings()
+        self.fileCount = 0
+        self.alertCount = 0
+        self.log = open("./SlackNotifyLog.txt","w")
+        self.log.write("initializing\n")
 
 
 if __name__ == '__main__':
     monitor = Monitor()
-    monitor.loadSettings()
+    monitor.run()
