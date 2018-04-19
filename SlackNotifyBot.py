@@ -11,15 +11,24 @@ from slackclient import SlackClient
   
 
 class Monitor():
-    watchDirectory = "."
+    def loadDefaultSettings(self):
+        self.watchDirectory = "."
+        self.checkInterval = 5
 
-    def loadSettings():
+    def loadSettings(self):
+        print("loadingSettings")
         try:
             #open file
-            print("opening")
-        except:
+            settingsFileObject = open("settings.cfg", "r")
+            print(settingsFileObject)
+        except OSError:
             #file not found, load defaults
             print("Could not open settings")
+        
+        #load defaults for now, will add file parsing later
+        self.loadDefaultSettings()
+        print(self.watchDirectory)
+        print(self.checkInterval)
 
     print("I'm watching")
 
@@ -29,3 +38,4 @@ class Alerter:
 
 if __name__ == '__main__':
     monitor = Monitor()
+    monitor.loadSettings()
