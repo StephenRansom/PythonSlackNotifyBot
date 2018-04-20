@@ -55,6 +55,15 @@ class Monitor():
 
     def sendAlert(self):
         self.log.write("ALERT! There are no new files!\n")
+        self.log.flush()
+        slackClientObject = SlackClient(self.slackToken)
+
+        slackClientObject.api_call('chat.postMessage', 
+            channel="alert_bot", 
+            text="ALERT! Bose is not receiving new files! @Ransom\t {}".format(time.ctime()), 
+            username='Alert Bot',
+            icon_emoji=':robot_face:',
+            reply_broadcast=True)
 
 
     def updateFileCount(self):
