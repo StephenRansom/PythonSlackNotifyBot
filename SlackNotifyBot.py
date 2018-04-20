@@ -15,6 +15,15 @@ class Monitor():
         self.watchDirectory = "."
         self.checkInterval = 5 
         self.maxAlertFrequency = 10 #greater or equal to check interval
+    
+    def loadSlackToken(self):
+        try:
+            slackFileObject = open("SlackToken.txt", "r")
+        except:
+            self.log.write("SlackToken.txt not found")
+            sys.exit("SlackToken.txt not found, exiting")
+
+        self.slackToken = slackFileObject.readline()
 
     def loadSettings(self):
         self.log.write("loadingSettings\n")
@@ -22,7 +31,7 @@ class Monitor():
             #open file
             settingsFileObject = open("settings.cfg", "r")
             
-        except OSError:
+        except:
             #file not found, load defaults
             self.log.write("Could not open settings\n")
         
@@ -61,7 +70,7 @@ class Monitor():
         self.loadSettings()
         x=0
         try:
-            while x < 20:
+            while x < 11:
                 self.log.write("looping\n")
                 time.sleep(self.checkInterval)
                 self.updateFileCount()
@@ -76,6 +85,7 @@ class Monitor():
         self.alertCount = 0
         self.log = open("./SlackNotifyLog.txt","w")
         self.log.write("initializing\n")
+        self.loadSlackToken()
 
 
 if __name__ == '__main__':
