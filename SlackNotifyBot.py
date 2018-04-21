@@ -17,7 +17,7 @@ class Monitor():
         self.checkInterval = 5 
         self.maxAlertFrequency = 10 #greater or equal to check interval
         self.slackChannelName="alert_bot", 
-        self.slackMessageText="ALERT! Bose is not receiving new files! <@channel> {}".format(time.ctime()), 
+        self.slackMessageText="ALERT! Bose is not receiving new files! <!channel> {}".format(time.ctime()), 
         self.slackBotUsername='Alert Bot'
         self.slackIconEmoji=':robot_face:'
         self.slackReplyBroadcast= "true"
