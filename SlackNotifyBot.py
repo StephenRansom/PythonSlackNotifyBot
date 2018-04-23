@@ -13,15 +13,52 @@ from slackclient import SlackClient
 
 class Monitor():
     def load_default_settings(self):
+        self.config['DEFAULT'] = {
+            'watchDirectory' : '.',
+            'checkInterval' : '5',
+            'maxAlertFrequency' : '10',
+            'slackMessageText' : 'alert! <!channel>',
+            'slackIconEmoji' : ':robot_face:',
+            'slackReplyBroadcast' : 'True',
+            'defaultValue' : '42'
+        }
+
         self.watchDirectory = "."
         self.checkInterval = 5 
         self.maxAlertFrequency = 10 #greater or equal to check interval
         self.slackChannelName="alert_bot", 
-        self.slackMessageText="ALERT! Bose is not receiving new files! <!channel> {}".format(time.ctime()), 
+        self.slackMessageText="ALERT! Directory is not receiving new files! <!channel> {}".format(time.ctime()), 
         self.slackBotUsername='Alert Bot'
         self.slackIconEmoji=':robot_face:'
         self.slackReplyBroadcast= "true"
+        self.errorTolerance = self.maxAlertFrequency / self.checkInterval
     
+    def load_settings(self):
+        self.config = configparser.ConfigParser()
+        self.load_default_settings()
+        try:
+            #open file
+            self.config.read("settings.cfg")
+            self.log.write("Successfully opened settings file\n")
+        except BaseException as e:
+            #file not found, load defaults
+            self.log.write("Could not open settings.cfg\n{}".format(e))
+
+        
+      
+        for option in self.config["Monitor Settings"]:
+           print(option)
+
+        for option in self.config["Slack Settings"]:
+           print option
+
+        print("Test Default Value:")
+        print(self.config.get('Slack Settings','defaultValue'))
+        self.log.flush()
+
+
+
+
     def initialize_slack_client(self):
         try:
             slackFileObject = open("SlackToken.txt", "r")
@@ -44,8 +81,7 @@ class Monitor():
             Lines from settings.cfg that are preceeded with a '#' are ignored as comments
         """
 
-        parser = SettingsParser(self.log)
-        parser.run()
+    
         self.errorTolerance = self.maxAlertFrequency / self.checkInterval
         if(self.errorTolerance <= 1):
             self.log.write("error tolerance too low: {}\n".format(self.errorTolerance))
@@ -98,7 +134,7 @@ class Monitor():
         
         x=0
         try:
-            while x < 11:
+            while x < 2:
                 self.log.write("looping\n")
                 time.sleep(self.checkInterval)
                 self.update_file_count()
@@ -111,45 +147,12 @@ class Monitor():
     def __init__(self):  
         self.log = open("./SlackNotifyLog.txt","w")
         self.log.write("------Initializing------\n")
+        self.load_settings()
         self.initialize_slack_client()
-        self.load_default_settings()
         self.fileCount = 0
         self.alertCount = 0
-        
-
-
-class SettingsParser():
-    def __init__(self, log_file):
-        self.log = log_file
-        
-
-    def run(self):
-        config = configparser.ConfigParser()
-        
-        try:
-            #open file
-            config.read("settings.cfg")
-            self.log.write("Successfully opened settings file\n")
-        except BaseException as e:
-            #file not found, load defaults
-            self.log.write("Could not open settings.cfg\n{}".format(e))
-
-        self.log.write(config["Monitor Settings"]["watchDirectory"])
-        print(config["Monitor Settings"]["watchDirectory"])
-        print(config["Monitor Settings"]["checkInterval"])
-        print(config["Monitor Settings"]["contiguousErrorTolerance"])
-        print(config["Monitor Settings"]["alertOnFirstError"])
-
-        print(config["Slack Settings"]["slackChannelName"])
-        print(config["Slack Settings"]["slackMessageText"])
-        print(config["Slack Settings"]["slackBotUsername"])
-        print(config["Slack Settings"]["slackIconEmoji"])
-        print(config["Slack Settings"]["slackReplyBroadcast"])
-
-
-        self.log.flush()
+      
 
 if __name__ == '__main__':
     monitor = Monitor()
-    monitor.load_custom_settings()
     monitor.run()
