@@ -113,7 +113,6 @@ class Monitor():
         self.log.write("------Initializing------\n")
         self.initialize_slack_client()
         self.load_default_settings()
-        self.load_custom_settings()
         self.fileCount = 0
         self.alertCount = 0
         
@@ -136,10 +135,21 @@ class SettingsParser():
             self.log.write("Could not open settings.cfg\n{}".format(e))
 
         self.log.write(config["Monitor Settings"]["watchDirectory"])
+        print(config["Monitor Settings"]["watchDirectory"])
+        print(config["Monitor Settings"]["checkInterval"])
+        print(config["Monitor Settings"]["contiguousErrorTolerance"])
+        print(config["Monitor Settings"]["alertOnFirstError"])
+
+        print(config["Slack Settings"]["slackChannelName"])
+        print(config["Slack Settings"]["slackMessageText"])
+        print(config["Slack Settings"]["slackBotUsername"])
+        print(config["Slack Settings"]["slackIconEmoji"])
+        print(config["Slack Settings"]["slackReplyBroadcast"])
 
 
         self.log.flush()
 
 if __name__ == '__main__':
     monitor = Monitor()
+    monitor.load_custom_settings()
     monitor.run()
