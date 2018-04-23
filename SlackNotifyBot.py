@@ -12,53 +12,50 @@ from slackclient import SlackClient
 
 
 class Monitor():
-    def load_default_settings(self):
-        '''Default Settings are used in the case that another value is not provided in settings.cfg'''
-        self.config['DEFAULT'] = {
+        
+    def load_settings(self):
+        config = configparser.ConfigParser()
+        config['DEFAULT'] = {
             'watchDirectory' : '.',
             'checkInterval' : '5',
-            'maxAlertFrequency' : '10',
+            'contiguousErrorsUntilAlert': '1',
+            'contiguousErrorsAfterAlert': '10',
             'slackMessageText' : 'alert! <!channel>',
             'slackIconEmoji' : ':robot_face:',
             'slackReplyBroadcast' : 'True',
-            'defaultValue' : '42'
+            'defaultValue' : '42',
+            'slackBotUsername' : "Alert Bot"            
         }
-
-        self.watchDirectory = "."
-        self.checkInterval = 5 
-        self.maxAlertFrequency = 10 #greater or equal to check interval
-        self.slackChannelName="alert_bot", 
-        self.slackMessageText="ALERT! Directory is not receiving new files! <!channel> {}".format(time.ctime()), 
-        self.slackBotUsername='Alert Bot'
-        self.slackIconEmoji=':robot_face:'
-        self.slackReplyBroadcast= "true"
-        self.errorTolerance = self.maxAlertFrequency / self.checkInterval
-    
-    def load_settings(self):
-        self.config = configparser.ConfigParser()
-        self.load_default_settings()
         try:
             #open file
-            self.config.read("settings.cfg")
+            config.read("settings.cfg")
             self.log.write("Successfully opened settings file\n")
         except BaseException as e:
             #file not found, load defaults
-            self.log.write("Could not open settings.cfg\n{}".format(e))
+            self.exit("Could not open settings.cfg\n{}".format(e))
 
-
-        print("Test Default Value:")
-        print(self.config.get('Slack Settings','defaultValue'))
-        self.log.flush()
+        try:
+            self.watchDirectory = config.get("Monitor Settings", "watchDirectory")
+            self.checkInterval = config.getint("Monitor Settings", "checkInterval") 
+            self.contiguousErrorsUntilAlert = config.getint("Monitor Settings", "contiguousErrorsUntilAlert")
+            self.contiguousErrorsAfterAlert = config.getint("Monitor Settings", "contiguousErrorsAfterAlert")
+            self.slackChannelName = config.get("Slack Settings", "slackChannelName")  
+            self.slackMessageText = config.get("Slack Settings", "slackMessageText") + " {}".format(time.ctime()) 
+            self.slackBotUsername = config.get("Slack Settings", "slackBotUsername")
+            self.slackIconEmoji= config.get("Slack Settings", "slackIconEmoji")
+            self.slackReplyBroadcast= config.getboolean("Slack Settings", "slackReplyBroadcast")          
+        except configparser.NoOptionError as e:
+            self.exit("encountered Exception {}".format(e))
 
     def exit(self, message):
-        self.log.write(message + '\nExiting')
+        self.log.write(message + '\nExiting {}'.format(time.ctime()))
         self.log.flush()
         sys.exit(message + '\nExiting')
 
 
     def initialize_slack_client(self):
         try:
-            slackFileObject = open("SlackTodken.txt", "r")
+            slackFileObject = open("SlackToken.txt", "r")
         except:
             self.exit("SlackToken.txt not found")
             
@@ -69,34 +66,21 @@ class Monitor():
             self.exit("Could not load slack client from provided slack token in SlackToken.txt!")
             
 
-    def load_custom_settings(self):
-        """ Attempts to load custom settings from file
-            If a valid setting is read for an attribute, the default setting will be overwritten
-            Otherwise the default is kept
-            Lines from settings.cfg that are preceeded with a '#' are ignored as comments
-        """
-
-    
-        self.errorTolerance = self.maxAlertFrequency / self.checkInterval
-        if(self.errorTolerance <= 1):
-            self.log.write("error tolerance too low: {}\n".format(self.errorTolerance))
-            self.errorTolerance = 1
-
     
     def process_error(self):
         """ Will raise an alert if criteria is met
             if this is the first check that returned a failure, send alert 
             if we have just sent an alert, wait until we exceed the errorTolerance to generate another alert to avoid spam
         """
-        self.alertCount += 1
-        if(self.alertCount >= self.errorTolerance): 
-            self.log.write("Alert count: {}, errorTolerance: {}\n".format(self.alertCount, self.errorTolerance))    
-            self.log.flush()       
-            self.alertCount = 0
-            self.process_error()
-        elif(self.alertCount == 1):
+        print("Error count: {}".format(self.contiguousErrorCount))
+        if(self.contiguousErrorCount == self.contiguousErrorsUntilAlert): 
             self.send_alert(self.slackChannelName, self.slackMessageText, self.slackBotUsername, self.slackIconEmoji, self.slackReplyBroadcast)
-
+            print("Alert!")
+        elif(self.contiguousErrorCount >= self.contiguousErrorsUntilAlert + self.contiguousErrorsAfterAlert):
+            self.contiguousErrorCount = -1
+            print("resetting error count")
+     
+        self.contiguousErrorCount += 1
 
     
     def send_alert(self, slackChannelName, slackMessageText, slackBotUsername, slackIconEmoji, slackReplyBroadcast):
@@ -122,18 +106,16 @@ class Monitor():
 
         if(self.fileCount < newFileCount):
             self.fileCount = newFileCount
+            self.contiguousErrorCount = 0
         else:
             self.process_error()
 
     def run(self):
         
-        x=0
         try:
-            while x < 2:
-                self.log.write("looping\n")
+            while True:
                 time.sleep(self.checkInterval)
                 self.update_file_count()
-                x += 1
         except BaseException as e:
             self.exit("Encountered exception {}".format(e))
             
@@ -144,7 +126,7 @@ class Monitor():
         self.load_settings()
         self.initialize_slack_client()
         self.fileCount = 0
-        self.alertCount = 0
+        self.contiguousErrorCount = 0
       
 
 if __name__ == '__main__':
