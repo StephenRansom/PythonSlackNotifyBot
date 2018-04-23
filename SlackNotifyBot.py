@@ -13,6 +13,7 @@ from slackclient import SlackClient
 
 class Monitor():
     def load_default_settings(self):
+        '''Default Settings are used in the case that another value is not provided in settings.cfg'''
         self.config['DEFAULT'] = {
             'watchDirectory' : '.',
             'checkInterval' : '5',
@@ -44,35 +45,29 @@ class Monitor():
             #file not found, load defaults
             self.log.write("Could not open settings.cfg\n{}".format(e))
 
-        
-      
-        for option in self.config["Monitor Settings"]:
-           print(option)
-
-        for option in self.config["Slack Settings"]:
-           print option
 
         print("Test Default Value:")
         print(self.config.get('Slack Settings','defaultValue'))
         self.log.flush()
 
-
+    def exit(self, message):
+        self.log.write(message + '\nExiting')
+        self.log.flush()
+        sys.exit(message + '\nExiting')
 
 
     def initialize_slack_client(self):
         try:
-            slackFileObject = open("SlackToken.txt", "r")
+            slackFileObject = open("SlackTodken.txt", "r")
         except:
-            self.log.write("SlackToken.txt not found")
-            self.log.flush()
-            sys.exit("SlackToken.txt not found, exiting")
+            self.exit("SlackToken.txt not found")
+            
 
         try:     
             self.slackClientObject = SlackClient(slackFileObject.readline())
         except:
-            self.log.write("Could not load slack client from provided slack token in SlackToken.txt!\nExiting")
-            self.log.flush()
-            sys.exit("Could not load slack client from provided slack token in SlackToken.txt!\nExiting")
+            self.exit("Could not load slack client from provided slack token in SlackToken.txt!")
+            
 
     def load_custom_settings(self):
         """ Attempts to load custom settings from file
@@ -140,9 +135,8 @@ class Monitor():
                 self.update_file_count()
                 x += 1
         except BaseException as e:
-            print("watcher has exited!, {}".format(e))
-            self.log.write("watcher has exited!, {}".format(e))
-            self.log.flush()
+            self.exit("Encountered exception {}".format(e))
+            
     
     def __init__(self):  
         self.log = open("./SlackNotifyLog.txt","w")
