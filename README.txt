@@ -10,10 +10,9 @@ Logging information is stored in "SlackNotifyLog.txt"
 [Monitor Settings]  
   watchDirectory              #directory to be monitored. ( "." for current directory, ".." for parent directory. No quotes necessary)  
   checkInterval               #Interval that the directory should be checked for new files (in seconds)  
-  contiguousErrorsUntilAlert  #Integer from 0 to max_int. When set to zero you will receive an alert on the first failed directory check,  
-                               set to larger numbers for a larger initial tolorance to failed checks.   
-                               Recommended value is at least 1 to prevent receiving alerts from a slightly delayed file update  
-  contiguousErrorsAfterAlert  #Integer from 0 to max_int. This value allows for a delay after receiving the first error so that you aren't spammed with alerts while your process is running.  
+  contiguousErrorsUntilAlert  #Integer from 0 to max_int. When set to zero you will receive an alert on the first failed directory 					check,set to larger numbers for a larger initial tolorance to failed checks.   
+                               	Recommended value is at least 1 to prevent receiving alerts from a slightly delayed file update  
+  contiguousErrorsAfterAlert  #Integer from 0 to max_int. This value allows for a delay after receiving the first error so that you 	                                aren't spammed with alerts while your process is running.  
   
 Example configurations:
   #this configuration will send an alert for every single failed check once per minute in the current directory
