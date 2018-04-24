@@ -18,13 +18,12 @@ class Monitor():
         config = configparser.ConfigParser()
         config['DEFAULT'] = {
             'watchDirectory' : '.',
-            'checkInterval' : '5',
+            'checkInterval' : '60',
             'contiguousErrorsUntilAlert': '1',
-            'contiguousErrorsAfterAlert': '10',
+            'contiguousErrorsAfterAlert': '9',
             'slackMessageText' : 'alert! <!channel>',
             'slackIconEmoji' : ':robot_face:',
             'slackReplyBroadcast' : 'True',
-            'defaultValue' : '42',
             'slackBotUsername' : "Alert Bot"            
         }        
         try:
@@ -52,7 +51,7 @@ class Monitor():
         self.log.write(message + '\nExiting {}'.format(time.ctime()))
         self.log.flush()
         try:
-            self.send_alert(self.send_alert(self.slackChannelName, message + " <!channel>", self.slackBotUsername, self.slackIconEmoji, self.slackReplyBroadcast))
+            self.send_alert(message + " <!channel> {}".format(time.ctime()))
         finally:
             sys.exit(message + '\nExiting')
 
@@ -65,7 +64,7 @@ class Monitor():
             
 
         try:     
-            self.slackClientObject = SlackClient(slackFileObject.readline())
+            self.slackClientObject = SlackClient(slackFileObject.readline().rstrip('\n'))
         except:
             self.exit("Could not load slack client from provided slack token in SlackToken.txt!")
             
@@ -76,26 +75,27 @@ class Monitor():
             if this is the first check that returned a failure, send alert 
             if we have just sent an alert, wait until we exceed the errorTolerance to generate another alert to avoid spam
         """
-
+        
         if(self.contiguousErrorCount == self.contiguousErrorsUntilAlert): 
-            self.send_alert(self.slackChannelName, self.slackMessageText, self.slackBotUsername, self.slackIconEmoji, self.slackReplyBroadcast)
+            self.log.write(self.slackMessageText + " {}\n".format(time.ctime()))
+            self.log.flush()
+            self.send_alert(self.slackMessageText)            
         elif(self.contiguousErrorCount >= self.contiguousErrorsUntilAlert + self.contiguousErrorsAfterAlert):
             self.contiguousErrorCount = -1
+            self.log.flush()
      
+
         self.contiguousErrorCount += 1
 
     
-    def send_alert(self, slackChannelName, slackMessageText, slackBotUsername, slackIconEmoji, slackReplyBroadcast):
+    def send_alert(self, messageText):
         """Sends alert to Slack Channel"""
-        self.log.write(slackMessageText + " {}\n".format(time.ctime()))
-        self.log.flush()
-        
 
         self.slackClientObject.api_call('chat.postMessage', 
-            channel = slackChannelName, 
-            text = slackMessageText, 
-            username = slackBotUsername,
-            icon_emoji = slackIconEmoji,
+            channel = self.slackChannelName, 
+            text = messageText, 
+            username = self.slackBotUsername,
+            icon_emoji = self.slackIconEmoji,
             link_names=1)
 
     
@@ -118,16 +118,17 @@ class Monitor():
                 time.sleep(self.checkInterval)
                 self.update_file_count()
         except (KeyboardInterrupt, SystemExit) as e:
-            self.exit("Encountered exception {}".format(e))
+            self.exit("----Program Exiting----\n")
         except BaseException as e:
             self.exit("Encountered exception {}".format(e))
             
     
     def __init__(self, configFile):  
         self.log = open(configFile,"w")
-        self.log.write("------Initializing------\n")
         self.load_settings()
         self.initialize_slack_client()
+        self.log.write("------Initializing------\n")
+        self.send_alert("------Initializing------\n")
         self.fileCount = 0
         self.contiguousErrorCount = 0
       
