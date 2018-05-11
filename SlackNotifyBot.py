@@ -111,12 +111,22 @@ class Monitor():
         else:
             self.process_error()
 
+    def checkForNewFiles(self):
+        #if numfiles <= 1
+            #if previous check passed
+                #then set previous check failed, return
+            #else previous check failed, no new files
+                #raise alert
+        #else
+            #check those timestamps my dude
+
     def run(self):
         
         try:
             while True:
                 time.sleep(self.checkInterval)
-                self.update_file_count()
+                #self.update_file_count()
+                self.checkForNewFiles()
         except (KeyboardInterrupt, SystemExit) as e:
             self.exit("----Program Exiting----\n")
         except BaseException as e:
