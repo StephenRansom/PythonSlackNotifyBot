@@ -18,26 +18,28 @@ Logging information is stored in "SlackNotifyLog.txt"
   contiguousErrorsAfterAlert  
   	-Integer from 0 to max_int. This value allows for a delay after receiving the first error so that you aren't spammed with alerts while your process is running.  
   
-Example configurations:
-  #this configuration will send an alert for every single failed check once per minute in the current directory
-  [Monitor Settings]
+## Example configurations:
+  this configuration will send an alert for every single failed check once per minute in the current directory
+```  [Monitor Settings]
 	  watchDirectory = .
 	  checkInterval = 60
 	  contiguousErrorsUntilAlert = 0
 	  contiguousErrorsAfterAlert = 0
+```	 
     
-  #This is a more recommended configuration if you are expecting minutely updates.
-  #It will wait until the second contiguous error to send an alert to account for time drift and slightly delayed updates
-  #It will wait for 9 more contiguous errors before sending another alert, so as not to spam the slack channel needlessly
-  #Effectively will send an alert every 11 minutes that it does not detect file updates in the parent directory
-  [Monitor Settings]
+  This is a more recommended configuration if you are expecting minutely updates.
+  It will wait until the second contiguous error to send an alert to account for time drift and slightly delayed updates
+  It will wait for 9 more contiguous errors before sending another alert, so as not to spam the slack channel needlessly
+  Effectively will send an alert every 11 minutes that it does not detect file updates in the parent directory
+```  [Monitor Settings]
 	  watchDirectory = ..
 	  checkInterval = 60
 	  contiguousErrorsUntilAlert = 1
 	  contiguousErrorsAfterAlert = 9
+	  ```
     
-  EXAMPLE RUNTIME PROCESS:
-  ------Initializing------
+ ### EXAMPLE RUNTIME PROCESS:
+ ``` ------Initializing------
   check 0 failed
   check 1 failed: ALERT!  
   check 2 failed
@@ -58,11 +60,11 @@ Example configurations:
   check 0 passed
   check 0 passed
   ...
+  ```
   
   
-  
- Built-in Default Values: #will be used if these values are not provided in the settings.cfg file
-  'watchDirectory' : '.',
+## Built-in Default Values: #will be used if these values are not provided in the settings.cfg file
+ ``` 'watchDirectory' : '.',
   'checkInterval' : '60',
   'contiguousErrorsUntilAlert': '1',
   'contiguousErrorsAfterAlert': '9',
@@ -71,23 +73,23 @@ Example configurations:
   'slackReplyBroadcast' : 'True',
   'defaultValue' : '42',
   'slackBotUsername' : "Alert Bot"  
-  
- Full Example Config:
- [Monitor Settings]
+  ```
+## Full Example Config:
+``` [Monitor Settings]
 	watchDirectory = /absolutepathto/thisdirectory/
 	checkInterval = 60
 	contiguousErrorsUntilAlert = 1
 	contiguousErrorsAfterAlert = 9
 	
-[Slack Settings]
+ [Slack Settings]
 	slackChannelName = alert_bot
 	slackMessageText = 'ALERT! Directory is not receiving new files! <!channel>'
 	slackBotUsername = Alert Bot
 	slackIconEmoji = :robot_face:
 	slackReplyBroadcast = True
   
-  
-TroubleShooting and Notes:
+  ```
+## TroubleShooting and Notes:
 If you run into issues reading the config file, make sure there is a valid newline at the end of each option. 
 I'd recommend manually pressing [enter] at the end of each value if in doubt. 
 
